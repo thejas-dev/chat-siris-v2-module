@@ -19,3 +19,7 @@ dist/
 # Logs
 *.log
 npm-debug.log*
+
+# Operator-only docs (kept locally, not pushed)
+docs/vercel-render-deployment-plan.md
+docs/redis-dual-url-migration-plan.md

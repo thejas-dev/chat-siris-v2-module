@@ -6,7 +6,7 @@
  *
  * Prerequisites (start separately):
  *   - Redis on localhost:6379 (single instance: set REDIS_URL + REDIS_DB_CACHE/EVENTS in each .env)
- *   - Or Upstash: set REDIS_CACHE_URL and REDIS_EVENTS_URL per service (see docs/redis-dual-url-migration-plan.md)
+ *   - Or Upstash: set REDIS_CACHE_URL and REDIS_EVENTS_URL per service in each .env
  *   - MongoDB (Atlas or local) — each service reads its own .env
  *
  * Usage:

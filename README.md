@@ -121,9 +121,8 @@ flowchart LR
   USER & GROUP & MSG & MEDIA & RT & WRK --> Events
 ```
 
-See [docs/redis-dual-url-migration-plan.md](docs/redis-dual-url-migration-plan.md).
-
 ---
+
 
 ## Request flow: send message
 
@@ -164,7 +163,7 @@ sequenceDiagram
 ├── chat-siris-media-service/
 ├── chat-siris-realtime-service/
 ├── chat-siris-worker-service/
-├── docs/                       # HLD, Redis reference
+├── docs/                       # HLD and architecture reference
 └── scripts/
     └── start-dev.js            # Local multi-service launcher
 ```
@@ -272,7 +271,6 @@ curl http://localhost:3006/health   # worker (+ queue depths)
 | Document | Description |
 |----------|-------------|
 | [docs/hld-microservices.md](docs/hld-microservices.md) | High-level design and architecture |
-| [docs/redis-dual-url-migration-plan.md](docs/redis-dual-url-migration-plan.md) | Two Redis URLs, key namespaces |
 | [chat-siris-gateway/README.md](chat-siris-gateway/README.md) | Routes, rate limits, rollback flags |
 
 ---
