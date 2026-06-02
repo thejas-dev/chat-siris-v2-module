@@ -1,0 +1,25 @@
+{
+  "name": "chat-siris-worker-service",
+  "version": "1.0.0",
+  "description": "Chat-Siris v2 worker-service — BullMQ consumers",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chat-siris/logger": "file:../chat-siris-logger",
+    "bullmq": "^5.56.0",
+    "dotenv": "^17.4.2",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.1"
+  }
+}

@@ -1,0 +1,38 @@
+name: Gateway Contract Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  contract-tests:
+    name: Contract test gate (P5-F-04, ≤15 min)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build @chat-siris/logger (file dependency)
+        working-directory: ../chat-siris-logger
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Install gateway
+        working-directory: .
+        run: npm ci
+
+      - name: Build gateway
+        run: npm run build
+
+      - name: Run contract + integration tests
+        run: npm test
+        env:
+          OTEL_ENABLED: "false"
+          INTERNAL_HMAC_SECRET: test-hmac-secret-for-integration

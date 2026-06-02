@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat-Siris Realtime — Event Tester</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="header-brand">
+      <h1>Realtime Event Tester</h1>
+      <p class="subtitle">Socket.IO client for <code>chat-siris-realtime-service</code></p>
+    </div>
+    <div class="header-status">
+      <span id="connection-badge" class="badge badge-disconnected">Disconnected</span>
+      <span id="socket-id" class="meta">—</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Connection -->
+    <section class="panel panel-connection" aria-labelledby="connection-heading">
+      <h2 id="connection-heading">Connection</h2>
+
+      <label class="field">
+        <span class="label">Server URL</span>
+        <input id="server-url" type="url" value="" placeholder="http://localhost:3333" autocomplete="off" />
+      </label>
+
+      <label class="field">
+        <span class="label">
+          Access Token (JWT)
+          <button type="button" id="decode-token" class="btn-link" title="Decode JWT payload (client-side only)">Decode</button>
+        </span>
+        <textarea id="access-token" rows="4" placeholder="Paste RS256 access token from auth-service / gateway…" spellcheck="false"></textarea>
+      </label>
+
+      <div id="token-info" class="token-info hidden" aria-live="polite"></div>
+
+      <div class="btn-row">
+        <button id="btn-connect" type="button" class="btn btn-primary">Connect</button>
+        <button id="btn-disconnect" type="button" class="btn btn-secondary" disabled>Disconnect</button>
+        <button id="btn-health" type="button" class="btn btn-ghost" title="GET /health">Health check</button>
+      </div>
+
+      <p class="hint">
+        Open this page in <strong>multiple tabs</strong> to test cross-client fan-out.
+        Same-origin served at <code>/test-client/</code> when the service is running.
+      </p>
+    </section>
+
+    <!-- Subscriptions -->
+    <section class="panel panel-subscriptions" aria-labelledby="subscriptions-heading">
+      <div class="panel-header-row">
+        <h2 id="subscriptions-heading">Subscribed Events</h2>
+        <span id="subscription-count" class="badge badge-muted">0 active</span>
+      </div>
+      <p class="hint">All server → client events are listened via <code>onAny</code>. Counts reset on reconnect.</p>
+      <ul id="subscription-list" class="event-list"></ul>
+    </section>
+
+    <!-- Emit -->
+    <section class="panel panel-emit" aria-labelledby="emit-heading">
+      <h2 id="emit-heading">Emit Events</h2>
+      <p class="hint">Client → server events. Edit JSON payloads before emitting.</p>
+
+      <div id="emit-forms" class="emit-forms"></div>
+
+      <details class="custom-emit">
+        <summary>Custom event</summary>
+        <label class="field">
+          <span class="label">Event name</span>
+          <input id="custom-event-name" type="text" placeholder="event-name" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="label">Payload (JSON)</span>
+          <textarea id="custom-event-payload" rows="5" spellcheck="false">{}</textarea>
+        </label>
+        <button id="btn-custom-emit" type="button" class="btn btn-primary">Emit custom</button>
+      </details>
+    </section>
+
+    <!-- Event log -->
+    <section class="panel panel-log" aria-labelledby="log-heading">
+      <div class="panel-header-row">
+        <h2 id="log-heading">Event Log</h2>
+        <div class="log-controls">
+          <label class="filter-field">
+            <span class="sr-only">Filter events</span>
+            <input id="log-filter" type="search" placeholder="Filter by event name…" autocomplete="off" />
+          </label>
+          <label class="checkbox-label">
+            <input id="log-pause" type="checkbox" />
+            Pause
+          </label>
+          <button id="btn-clear-log" type="button" class="btn btn-ghost">Clear</button>
+          <button id="btn-export-log" type="button" class="btn btn-ghost">Export JSON</button>
+        </div>
+      </div>
+      <div id="event-log" class="event-log" role="log" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
