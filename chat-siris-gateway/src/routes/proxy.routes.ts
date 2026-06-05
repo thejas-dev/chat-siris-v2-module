@@ -92,6 +92,12 @@ async function readRequestBody(
 
 const UPSTREAM_STRIP_HEADERS = new Set([
   "transfer-encoding",
+  // fetch/undici already decompresses the upstream body before we re-send it, so
+  // forwarding the upstream's content-encoding/content-length would make the client
+  // try to gunzip a plain body ("Decompression failed") or read a wrong length.
+  // Express sets its own Content-Length on res.json()/res.send().
+  "content-encoding",
+  "content-length",
   "access-control-allow-origin",
   "access-control-allow-credentials",
   "access-control-allow-methods",
