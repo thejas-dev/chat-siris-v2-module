@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/thejas.hari/projects/personal/chat-siris-user-service/chat-siris-user-service/**)",
+      "Bash(npx tsc *)",
+      "Bash(SERVICE_NAME=user-service npx tsx -e \"import\\('./api/index.ts'\\).then\\(m => { console.log\\('LOADED, default handler type:', typeof m.default\\); process.exit\\(0\\); }\\).catch\\(e => { console.error\\('LOAD FAILED:', e\\); process.exit\\(1\\); }\\);\")",
+      "Bash(SERVICE_NAME=user-service npx tsx -e \"import\\('./api/index.ts'\\).then\\(m => { const h = typeof m.default === 'function' ? m.default : m.default?.default; console.log\\('resolved handler is function:', typeof h === 'function', '| length\\(args\\):', h?.length\\); process.exit\\(0\\); }\\);\")",
+      "Bash(vercel --version)",
+      "Bash(vercel ls *)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(rm -f api/index.ts)",
+      "Bash(rmdir api *)",
+      "Bash(ls -la api)"
+    ]
+  }
+}
