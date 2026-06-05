@@ -1,3 +1,7 @@
+// Load env first, then telemetry (so OpenTelemetry can instrument http/express
+// before those modules are required), then everything else.
+import "dotenv/config";
+import "./telemetry";
 import express, { type Express } from "express";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
@@ -9,8 +13,6 @@ import {
 } from "@chat-siris/logger";
 import { createInternalRouter } from "./routes/internal.routes";
 import { pingRedis } from "./redis";
-
-require("dotenv").config();
 
 const SERVICE_NAME = process.env.SERVICE_NAME ?? "auth-service";
 const VERSION = process.env.npm_package_version ?? "1.0.0";
@@ -75,6 +77,60 @@ export async function pingMongo(): Promise<boolean> {
   return mongoose.connection.readyState === 1;
 }
 
+// Serverless has no startup hook, so connect to Mongo lazily on first request and
+// cache the promise across warm invocations. No-op once connected.
+let mongoConnectPromise: Promise<void> | null = null;
+function ensureMongoConnection(): Promise<void> {
+  if (mongoose.connection.readyState === 1) {
+    return Promise.resolve();
+  }
+  if (!mongoConnectPromise) {
+    mongoConnectPromise = connectMongo().catch((err: unknown) => {
+      mongoConnectPromise = null;
+      throw err;
+    });
+  }
+  return mongoConnectPromise;
+}
+
+// createApp() is async; build it once on first request and reuse it.
+let appPromise: Promise<Express> | null = null;
+function getApp(): Promise<Express> {
+  if (!appPromise) {
+    appPromise = createApp().catch((err: unknown) => {
+      appPromise = null;
+      throw err;
+    });
+  }
+  return appPromise;
+}
+
+// Synchronous outer app so Vercel detects it as a single Serverless Function
+// (zero-config Express). /health stays connection-agnostic; all other paths ensure
+// Mongo + the (async-built) inner app, then delegate to it.
+const app = express();
+
+app.get("/health", async (_req, res) => {
+  const [mongoOk, redisOk] = await Promise.all([pingMongo(), pingRedis()]);
+  const ok = mongoOk && redisOk;
+  res.status(ok ? 200 : 503).json(
+    buildHealthResponse({
+      service: SERVICE_NAME,
+      version: VERSION,
+      mongo: mongoOk,
+      redis: redisOk,
+    }),
+  );
+});
+
+app.use((req, res, next) => {
+  Promise.all([getApp(), ensureMongoConnection()])
+    .then(([innerApp]) => innerApp(req, res))
+    .catch((err: unknown) => next(err));
+});
+
+export default app;
+
 export async function startServer(): Promise<void> {
   const logger = createLogger(SERVICE_NAME);
   const port = Number.parseInt(process.env.PORT ?? "3001", 10);
@@ -84,29 +140,18 @@ export async function startServer(): Promise<void> {
     db: process.env.MONGODB_DB_NAME ?? "chat_auth",
   });
 
-  const app = await createApp();
-
-  app.get("/health", async (_req, res) => {
-    const [mongoOk, redisOk] = await Promise.all([pingMongo(), pingRedis()]);
-
-    const status = mongoOk && redisOk ? "ok" : "degraded";
-    res.status(status === "ok" ? 200 : 503).json(
-      buildHealthResponse({
-        service: SERVICE_NAME,
-        version: VERSION,
-        mongo: mongoOk,
-        redis: redisOk,
-      }),
-    );
-  });
+  // Pre-build the inner app so config/route errors surface at startup.
+  await getApp();
 
   app.listen(port, () => {
     logger.info(`auth-service listening on port ${port}`);
   });
 }
 
+// Local dev / Render (`node dist/index.js`): start the listener.
+// On Vercel the module is imported (require.main !== module), so this is skipped
+// and the default-exported app is served instead.
 if (require.main === module) {
-  require("./telemetry");
   startServer().catch((err: unknown) => {
     console.error("Failed to start auth-service:", err);
     process.exit(1);

@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ../chat-siris-logger && npm install && npm run build && cd ../chat-siris-gateway && npm install"
+}

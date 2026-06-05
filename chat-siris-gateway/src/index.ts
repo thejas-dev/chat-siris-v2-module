@@ -1,3 +1,7 @@
+// Load env first, then telemetry (so OpenTelemetry can instrument http/express
+// before those modules are required), then everything else.
+import "dotenv/config";
+import "./telemetry";
 import express, { type Express } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -106,20 +110,47 @@ export async function createApp(options?: {
   return app;
 }
 
+// createApp() is async (rate limiters read Redis); build it once and reuse it.
+let appPromise: Promise<Express> | null = null;
+function getApp(): Promise<Express> {
+  if (!appPromise) {
+    appPromise = createApp().catch((err: unknown) => {
+      appPromise = null;
+      throw err;
+    });
+  }
+  return appPromise;
+}
+
+// Synchronous outer app so Vercel detects it as a single Serverless Function
+// (zero-config Express). The inner app (health + proxy) is built on first request
+// and handles everything. No Mongo here — the gateway is stateless HTTP + Redis.
+const app = express();
+
+app.use((req, res, next) => {
+  getApp()
+    .then((innerApp) => innerApp(req, res))
+    .catch((err: unknown) => next(err));
+});
+
+export default app;
+
 export async function startServer(): Promise<void> {
-  const logger = createLogger(process.env.SERVICE_NAME ?? "api-gateway");
+  const logger = createLogger(SERVICE_NAME);
   const port = Number.parseInt(process.env.PORT ?? "8080", 10);
 
-  const app = await createApp();
+  // Pre-build the inner app so config errors surface at startup.
+  await getApp();
 
   app.listen(port, () => {
     logger.info(`api-gateway listening on port ${port}`);
   });
 }
 
+// Local dev / Render (`node dist/index.js`): start the listener.
+// On Vercel the module is imported (require.main !== module), so this is skipped
+// and the default-exported app is served instead.
 if (require.main === module) {
-  require("dotenv").config();
-  require("./telemetry");
   startServer().catch((err: unknown) => {
     console.error("Failed to start api-gateway:", err);
     process.exit(1);
